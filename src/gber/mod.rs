@@ -1,15 +1,19 @@
+type InputInt = u32;
+const INPUT_BIT_WIDTH: usize = 32;
+
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Term {
-    pub coefficient: u64,
+    pub coefficient: InputInt,
     pub exponent: u8,
 }
 
 impl Term {
-    pub fn calculate_value(&self, base: u64) -> u64 {
+    pub fn calculate_value(&self, base: InputInt) -> InputInt {
         self.coefficient * base.pow(self.exponent as u32)
     }
 
-    pub fn calculate_components(&self, base: u64) -> Vec<u64> {
+    pub fn calculate_components(&self, base: InputInt) -> Vec<InputInt> {
         let mut components = vec![];
         for _ in 0..self.coefficient {
             components.push(base.pow(self.exponent as u32));
@@ -20,15 +24,15 @@ impl Term {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct GBERepresentation {
-    pub base: u64,
-    pub terms: [Term; 64],
-    pub remainder: u64,
+    pub base: InputInt,
+    pub terms: [Term; INPUT_BIT_WIDTH],
+    pub remainder: InputInt,
 }
 
 impl GBERepresentation {
-    pub fn new(decimal_number: u64, base: u64) -> Self {
+    pub fn new(decimal_number: InputInt, base: InputInt) -> Self {
         let mut remainder = decimal_number;
-        let mut terms = [Term{coefficient: 0, exponent: 0}; 64];
+        let mut terms = [Term{coefficient: 0, exponent: 0}; INPUT_BIT_WIDTH];
         let mut index = 0;
         while index <= 64 {
             match quantized_kernel_from(remainder, base) {
@@ -43,15 +47,15 @@ impl GBERepresentation {
         Self{base, terms, remainder}
     }
 
-    pub fn calculate_components(&self) -> Vec<u64> {
-        let mut components: Vec<u64> = self.terms.iter().flat_map(
+    pub fn calculate_components(&self) -> Vec<InputInt> {
+        let mut components: Vec<InputInt> = self.terms.iter().flat_map(
             |term| term.calculate_components(self.base)
         ).collect();
         components.push(self.remainder);
         components
     }
 
-    pub fn to_decimal(&self) -> u64 {
+    pub fn to_decimal(&self) -> InputInt {
         let mut decimal = 0;
         for term in self.terms.iter() {
             decimal += term.calculate_value(self.base);
@@ -61,7 +65,7 @@ impl GBERepresentation {
 }
 
 
-pub fn quantized_kernel_from(number: u64, base: u64) -> Option<(u64, u64, Term)> {
+pub fn quantized_kernel_from(number: InputInt, base: InputInt) -> Option<(InputInt, InputInt, Term)> {
     // The log will always be >= 1,
     // since the size is always greater than the base
     if number < base {
@@ -75,7 +79,7 @@ pub fn quantized_kernel_from(number: u64, base: u64) -> Option<(u64, u64, Term)>
 
 }
 
-pub fn integer_log(number: u64, base: u64) -> u8 {
+pub fn integer_log(number: InputInt, base: InputInt) -> u8 {
     // Brute-force integer logarithm.
     // Floating point logarithms
     // lose precision dramatically for large numbers
