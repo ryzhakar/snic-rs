@@ -15,10 +15,10 @@ fn main() {
         let comparisons = dbg!(network::calculate_comparisons_number_for(matchups, r.base));
         running_matchups_sum += matchups;
         running_comparisons_sum += comparisons;
-        if dbg!(r.remainder > 0) {
-            running_matchups_sum += 1;
-            running_comparisons_sum += dbg!(network::calculate_comparisons_number_for(1, r.base));
-        }
+    }
+    if dbg!(r.remainder > 0) {
+        running_matchups_sum += 1;
+        running_comparisons_sum += dbg!(network::calculate_comparisons_number_for(1, r.base));
     }
     dbg!(running_matchups_sum, running_comparisons_sum);
 }
