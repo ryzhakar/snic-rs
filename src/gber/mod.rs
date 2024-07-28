@@ -1,7 +1,7 @@
 use crate::common_types::{InputInt, BaseInt, INPUT_BIT_WIDTH};
 use crate::common_utilities;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Default, Debug, Clone, Copy, PartialEq)]
 pub struct Term {
     pub coefficient: BaseInt,
     pub exponent: u8,
@@ -22,7 +22,7 @@ impl Term {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Default, Debug, Clone, Copy, PartialEq)]
 pub struct GBERepresentation {
     pub base: BaseInt,
     pub terms: [Term; INPUT_BIT_WIDTH],
