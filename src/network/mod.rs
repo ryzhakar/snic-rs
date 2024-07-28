@@ -1,5 +1,4 @@
 use crate::common_types::{InputInt, BaseInt};
-use crate::gber;
 use crate::common_utilities;
 
 
@@ -18,8 +17,6 @@ pub fn calculate_comparisons_number_for(
     base: BaseInt,
 ) -> u64 {
     let base: InputInt = base.into();
-    dbg!(base);
     let per_matchup: InputInt = base * (base-1) / 2;
-    dbg!(per_matchup);
     matchups_number * per_matchup as u64
 }

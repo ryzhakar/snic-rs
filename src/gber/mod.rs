@@ -65,7 +65,7 @@ impl GBERepresentation {
 }
 
 
-pub fn quantized_kernel_from(number: InputInt, base: BaseInt) -> Option<(InputInt, BaseInt, Term)> {
+pub fn quantized_kernel_from(number: InputInt, base: BaseInt) -> Option<(InputInt, InputInt, Term)> {
     // The log will always be >= 1,
     // since the size is always greater than the base
     if number < base.into() {
@@ -73,12 +73,11 @@ pub fn quantized_kernel_from(number: InputInt, base: BaseInt) -> Option<(InputIn
     }
     let exponent = common_utilities::integer_log(number, base);
 
-    // Always: number >= kernel
+    // Always: number >= kernel >= base > coefficient
     let collapsed_kernel = (base as InputInt).pow(exponent as u32);
-    // Always: base > coefficient
     let coefficient: BaseInt = (number / collapsed_kernel) as BaseInt;
     let full_component: InputInt = collapsed_kernel * coefficient as InputInt;
-    let remainder: BaseInt = (number - full_component) as BaseInt;
+    let temporary_remainder: InputInt = number - full_component;
 
-    Some((collapsed_kernel, remainder, Term{coefficient, exponent}))
+    Some((collapsed_kernel, temporary_remainder, Term{coefficient, exponent}))
 }
