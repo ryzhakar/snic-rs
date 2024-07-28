@@ -80,14 +80,6 @@ pub fn quantized_kernel_from(number: InputInt, base: InputInt) -> Option<(InputI
 }
 
 pub fn integer_log(number: InputInt, base: InputInt) -> u8 {
-    // Brute-force integer logarithm.
-    // Floating point logarithms
-    // lose precision dramatically for large numbers
-    let mut n = number;
-    let mut log = 0;
-    while n >= base {
-        n /= base;
-        log += 1;
-    }
-    log
+    // The floor of the log base of a number
+    (number as f64).log(base as f64).floor() as u8
 }
