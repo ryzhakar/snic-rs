@@ -2,7 +2,6 @@ use crate::gber;
 use crate::common_types::{InputInt, BaseInt};
 use crate::common_utilities;
 use std::collections::VecDeque;
-use pyo3::prelude::*;
 
 
 pub fn calculate_matchups_number_for(
