@@ -21,11 +21,7 @@ fn stream_matches_from<'py>(
             match_size,
         ))
     );
-    let mut vector = vec![];
-    for matchup in iterator {
-        vector.push(matchup);
-    };
-    vector
+    iterator.collect()
 }
 
 #[pymodule]
