@@ -5,7 +5,7 @@ edition = "2021"
 
 [lib]
 name = "snic"
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
 
 # [dependencies]
 # pyo3 = { version = "0.22.2", features = ["extension-module", "abi3-py38"] }
@@ -15,4 +15,4 @@ version = "0.22.2"
 [features]
 abi3-py38 = ["pyo3/abi3-py38"]
 extension-module = ["pyo3/extension-module"]
-default = ["extension-module"]
+# default = ["extension-module", "abi3-py38"]

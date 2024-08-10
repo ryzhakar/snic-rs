@@ -37,6 +37,10 @@ impl Term {
         let component_value = (base as InputInt).pow(self.exponent as u32);
         return (0..self.coefficient).map(|_| component_value).collect()
     }
+    pub fn calculate_components_with_exponents(&self, base: BaseInt) -> Vec<(InputInt, u8)> {
+        let component_value = (base as InputInt).pow(self.exponent as u32);
+        return (0..self.coefficient).map(|_| (component_value, self.exponent)).collect()
+    }
 }
 
 /// GBER of a number.
@@ -73,6 +77,12 @@ impl Decomposition {
     pub fn calculate_components(&self) -> Vec<InputInt> {
         self.terms.iter().flat_map(
             |term| term.calculate_components(self.base)
+        ).collect()
+    }
+
+    pub fn calculate_components_with_exponents(&self) -> Vec<(InputInt, u8)> {
+        self.terms.iter().flat_map(
+            |term| term.calculate_components_with_exponents(self.base)
         ).collect()
     }
 
