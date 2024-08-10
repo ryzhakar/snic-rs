@@ -1,3 +1,4 @@
+//! Python bindings for the snic library.
 mod gber;
 mod network;
 mod common_types;
@@ -5,6 +6,8 @@ mod common_utilities;
 use pyo3::prelude::*;
 
 
+/// Generate all matchups of a network of a given size.
+/// TODO: stream instead of collecting all in memory.
 #[pyfunction]
 #[pyo3(signature = (network_size, match_size))]
 fn stream_matches_from<'py>(
@@ -13,7 +16,7 @@ fn stream_matches_from<'py>(
     match_size: common_types::BaseInt,
 ) -> Vec<Vec<common_types::InputInt>> {
     let iterator = network::StreamNetworkMatchups::new(
-        gber::GBERepresentation::new(
+        gber::Decomposition::new(
             network_size,
             match_size,
         )

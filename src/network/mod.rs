@@ -1,9 +1,13 @@
+//! Generation of matchups for a network based on a GBER of it's size.
 use crate::gber;
 use crate::common_types::{InputInt, BaseInt};
 use crate::common_utilities;
 use std::collections::VecDeque;
 
 
+/// Calculate the number of matchups for a subnetwork of a given size.
+/// Since it can be derived mathematically, this is more useful to do
+/// than to iterate through the matchups.
 pub fn calculate_matchups_number_for(
     subnetwork_size: InputInt,
     base: BaseInt,
@@ -14,6 +18,9 @@ pub fn calculate_matchups_number_for(
 }
 
 
+/// Calculate the number of comparisons for a given number of matchups.
+/// Since the number of comparisons is a direct function of the number of matchups,
+/// this is more useful to do than to iterate through the matchups.
 pub fn calculate_comparisons_number_for(
     matchups_number: u64,
     base: BaseInt,
@@ -24,10 +31,16 @@ pub fn calculate_comparisons_number_for(
 }
 
 
+/// Iterator for generating the matchups of a subnetwork.
+/// References elements of the subnetwork by their index.
+/// Indices are 0-based and global to the whole network.
 #[derive(Default, Debug)]
 pub struct MatchupIterator {
+    /// Should be an integer component of a GBER term.
     pub network_size: InputInt,
+    /// Coincides with the base of the GBER.
     pub matchup_size: BaseInt,
+    /// Index offset for the items in the subnetwork.
     pub offset: InputInt,
     level: u8,
     // Current item, exclusive end item
@@ -114,14 +127,18 @@ impl Iterator for MatchupIterator {
 
 }
 
+/// Iterator for generating the matchups of the whole network.
+/// Generates matchups for subnetworks.
+/// TODO: generate inter-subnetwork matchups.
+/// TODO: generate remainder matchups.
 #[derive(Default, Debug)]
 pub struct StreamNetworkMatchups {
-    pub network_gber: gber::GBERepresentation,
+    pub network_gber: gber::Decomposition,
     term_iterators: VecDeque<MatchupIterator>,
 }
 
 impl StreamNetworkMatchups {
-    pub fn new(network_gber: gber::GBERepresentation) -> Self {
+    pub fn new(network_gber: gber::Decomposition) -> Self {
         let mut rolling_offset: InputInt = 0;
         let term_iterators = network_gber.calculate_components().iter()
             .map(
