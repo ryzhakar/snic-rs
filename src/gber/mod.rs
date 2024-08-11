@@ -23,7 +23,10 @@ pub struct Decomposition {
 }
 
 impl Decomposition {
-    pub fn new(decimal_number: InputInt, base: BaseInt) -> Self {
+    pub fn new(decimal_number: InputInt, base: BaseInt) -> Result<Self, &'static str> {
+        if base < 2 {
+            return Err("The base must be greater than 1.");
+        }
         let mut remainder = decimal_number;
         let mut component_collections: Vec<Vec<u8>> = vec![];
         loop {
@@ -36,11 +39,11 @@ impl Decomposition {
                 }
             };
         }
-        Self {
+        Ok(Self {
             base,
             remainder: remainder as BaseInt,
             component_powers: component_collections.into_iter().flatten().collect(),
-        }
+        })
     }
 
     pub fn stream_all_components(&self) -> impl Iterator<Item = InputInt> + '_ {

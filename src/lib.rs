@@ -14,8 +14,8 @@ fn stream_matches_from<'py>(
     network_size: common_types::InputInt,
     match_size: common_types::BaseInt,
 ) -> Vec<Vec<common_types::InputInt>> {
-    let iterator =
-        network::StreamNetworkMatchups::new(gber::Decomposition::new(network_size, match_size));
+    let decomposition = gber::Decomposition::new(network_size, match_size).expect("Invalid decomposition values");
+    let iterator = network::StreamNetworkMatchups::new(decomposition);
     iterator.collect()
 }
 
