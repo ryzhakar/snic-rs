@@ -4,6 +4,7 @@ from matplotlib.animation import FuncAnimation
 from matplotlib.patches import PathPatch
 from matplotlib.path import Path
 import argparse
+from itertools import combinations
 
 from snic import stream_matches_from
 
@@ -93,8 +94,8 @@ class SNICVisualizer:
     def animate(self, frame):
         if frame < len(self.matchups):
             matchup = self.matchups[frame]
-            for i in range(len(matchup) - 1):
-                arc = self.draw_arc(matchup[i], matchup[i + 1])
+            for points in combinations(matchup, 2):
+                arc = self.draw_arc(*points)
                 self.arcs.append(arc)
 
             # Highlight the most recent matchup

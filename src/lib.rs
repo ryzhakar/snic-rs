@@ -16,10 +16,10 @@ fn stream_matches_from<'py>(
     match_size: common_types::BaseInt,
 ) -> Vec<Vec<common_types::InputInt>> {
     let iterator = network::StreamNetworkMatchups::new(
-        dbg!(gber::Decomposition::new(
+        gber::Decomposition::new(
             network_size,
             match_size,
-        ))
+        )
     );
     iterator.collect()
 }

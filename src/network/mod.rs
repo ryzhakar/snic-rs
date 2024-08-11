@@ -142,7 +142,7 @@ pub struct StreamNetworkMatchups {
 impl StreamNetworkMatchups {
     pub fn new(network_gber: gber::Decomposition) -> Self {
         let mut rolling_offset: InputInt = 0;
-        let subnetwork_iterators = network_gber.calculate_components().iter()
+        let subnetwork_iterators = network_gber.stream_all_components()
             .map(
                 |sn_size| {
                     let iter = SubnetworkIterator::new(sn_size.clone(), network_gber.base, rolling_offset).unwrap();
@@ -151,7 +151,6 @@ impl StreamNetworkMatchups {
                 }
         ).collect();
         let intersubnetwork_matchups = stream_intersubnetwork_matchups(&network_gber);
-        dbg!("intersubnetwork_matchups", &intersubnetwork_matchups);
         Self {
             network_gber,
             subnetwork_iterators,
@@ -184,39 +183,62 @@ impl Iterator for StreamNetworkMatchups {
 }
 
 fn stream_intersubnetwork_matchups(decomposition: &gber::Decomposition) -> VecDeque<Vec<InputInt>> {
-    let components_with_exponents = decomposition.calculate_components_with_exponents();
-    let mut termiter = (&components_with_exponents).iter();
-    let (hub_network_size, _) = termiter.next().unwrap();
-    let mut index_offset: InputInt = 0;
-    let mut hub_seat_offset: BaseInt = 0;
+    let component_pairs: Vec<(InputInt, u8)> = zip(
+        decomposition.stream_all_components(),
+        decomposition.component_powers.clone().into_iter()
+    ).collect();
     let seat_allocations = matchup_allocations_for(
-        &decomposition.calculate_components_with_exponents(),
+        &component_pairs,
         decomposition.base,
     );
-    let total_hub_seats: BaseInt = (&seat_allocations).iter().map(|(hs, _)| hs.to_owned()).sum();
+    let mut component_iterator = (&component_pairs).iter();
+
+    let remainder_hub_allocation = decomposition.base - decomposition.remainder;
+    let total_hub_seats: BaseInt = {
+        (&seat_allocations).iter()
+            .map(|(hs, _)| hs.to_owned())
+            .sum::<BaseInt>()
+        + remainder_hub_allocation
+    };
     if total_hub_seats == 0 {
         return VecDeque::new()
     }
+
+
+    let mut index_offset: InputInt = 0;
+    let mut hub_seat_offset: BaseInt = 0;
+    let (hub_network_size, _) = component_iterator.next().unwrap();
     let reserved_hub_seats = take_elements_uniformly(
         *hub_network_size,
         total_hub_seats,
         index_offset,
     ).collect::<Vec<InputInt>>();
     index_offset += hub_network_size;
-    zip(termiter, seat_allocations).into_iter().map(
-        move |((spoke_size, _), (hub_seats, spoke_seats))| {
+
+    let mut inter_matchups: VecDeque<Vec<InputInt>> = zip(component_iterator, seat_allocations).into_iter().map(
+        |((spoke_size, _), (hub_seats, spoke_seats))| {
             let reserved_spoke_seats_stream = take_elements_uniformly(
                 *spoke_size,
                 spoke_seats,
                 index_offset,
             );
-            let hseat_range = hub_seat_offset as usize..(hub_seat_offset + hub_seats) as usize;
-            let current_hub_seats = Vec::from(&reserved_hub_seats[hseat_range]);
+            let current_hub_seats = get_vector_slice_from(&reserved_hub_seats, hub_seat_offset, hub_seats);
             index_offset += spoke_size;
             hub_seat_offset += hub_seats;
             current_hub_seats.into_iter().chain(reserved_spoke_seats_stream).collect::<Vec<InputInt>>()
         }
-    ).collect()
+    ).collect();
+
+    let remainder_hub_seats = get_vector_slice_from(&reserved_hub_seats, hub_seat_offset, remainder_hub_allocation);
+    let remainder_elements = (index_offset..(index_offset + decomposition.remainder as InputInt)).into_iter();
+    let remainder_matchup = remainder_elements.chain(remainder_hub_seats).into_iter().collect();
+    inter_matchups.push_back(remainder_matchup);
+    inter_matchups
+}
+
+fn get_vector_slice_from<T: Clone>(view: &[T], start: BaseInt, quantity: BaseInt,) -> Vec<T> {
+    let slice_range = start as usize..(start + quantity) as usize;
+    Vec::from(&view[slice_range])
 }
 
 fn allocate_matchup_seats_for(

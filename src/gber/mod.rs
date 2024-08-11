@@ -8,48 +8,16 @@
 //! 
 //! 3. **Completeness**: GBER can represent any non-negative integer for any base b > 1.
 
-use crate::common_types::{InputInt, BaseInt, INPUT_BIT_WIDTH};
+use crate::common_types::{InputInt, BaseInt};
 use crate::common_utilities;
 
-/// Building block of GBER: `cb^p`
-/// A positive integer representation
-/// as multiplication of base exponents.
-///
-/// Example in base-3: `18 = 2 * 3 ^ 2`
-#[derive(Default, Debug, Clone, Copy, PartialEq)]
-pub struct Term {
-    /// Number of components.
-    /// Always smaller than base - being equal to the base would increment the exponent.
-    pub coefficient: BaseInt,
-    /// The power of the base.
-    pub exponent: u8,
-}
-
-impl Term {
-    /// Transform the term back to its original integer value.
-    pub fn calculate_value(&self, base: BaseInt) -> InputInt {
-        self.coefficient as InputInt * (base as InputInt).pow(self.exponent as u32)
-           
-    }
-
-    /// Calculate integer values of the terms components.
-    pub fn calculate_components(&self, base: BaseInt) -> Vec<InputInt> {
-        let component_value = (base as InputInt).pow(self.exponent as u32);
-        return (0..self.coefficient).map(|_| component_value).collect()
-    }
-    pub fn calculate_components_with_exponents(&self, base: BaseInt) -> Vec<(InputInt, u8)> {
-        let component_value = (base as InputInt).pow(self.exponent as u32);
-        return (0..self.coefficient).map(|_| (component_value, self.exponent)).collect()
-    }
-}
-
 /// GBER of a number.
-#[derive(Default, Debug, Clone, Copy, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct Decomposition {
     /// The base against which the number is decomposed.
     pub base: BaseInt,
-    /// The resulting terms of the decomposition
-    pub terms: [Term; INPUT_BIT_WIDTH],
+    /// Flattened term components as base exponents.
+    pub component_powers: Vec<u8>,
     /// The last 0-power term as a remainder.
     pub remainder: BaseInt,
 }
@@ -57,47 +25,45 @@ pub struct Decomposition {
 impl Decomposition {
     pub fn new(decimal_number: InputInt, base: BaseInt) -> Self {
         let mut remainder = decimal_number;
-        let mut terms = [Term{coefficient: 0, exponent: 0}; INPUT_BIT_WIDTH];
-        let mut index = 0;
-        while index <= INPUT_BIT_WIDTH {
-            match quantized_kernel_from(remainder, base) {
-                Some((_kernel, new_remainder, term)) => {
-                    terms[index] = term;
-                    remainder = new_remainder as InputInt;
-                    index += 1;
+        let mut component_collections: Vec<Vec<u8>> = vec!();
+        loop {
+            let decomposition_step_result = get_max_components_from(
+                remainder, base
+            );
+            match decomposition_step_result {
+                None => break,
+                Some((transitive_remainder, components)) => {
+                    remainder = transitive_remainder;
+                    component_collections.push(components);
                 },
-                _ => break,
             };
         };
-        Self{base, terms, remainder: remainder as BaseInt}
+        Self{
+            base,
+            remainder: remainder as BaseInt,
+            component_powers: component_collections.into_iter().flatten().collect(),
+        }
     }
 
-    /// Chain all the term-level components.
-    /// Does not include the remainder.
-    pub fn calculate_components(&self) -> Vec<InputInt> {
-        self.terms.iter().flat_map(
-            |term| term.calculate_components(self.base)
-        ).collect()
+    pub fn stream_all_components(&self) -> impl Iterator<Item=InputInt> + '_ {
+        self.component_powers.iter().map(
+            |power| self.calculate_single_component(power.clone())
+        )
     }
 
-    pub fn calculate_components_with_exponents(&self) -> Vec<(InputInt, u8)> {
-        self.terms.iter().flat_map(
-            |term| term.calculate_components_with_exponents(self.base)
-        ).collect()
+    /// Present the component as its regular integer variant
+    pub fn calculate_single_component(&self, component_power: u8) -> InputInt {
+        (self.base as InputInt).pow(component_power as u32)
     }
 
     /// Return the original integer value of the GBER.
     pub fn to_decimal(&self) -> InputInt {
-        let mut decimal: InputInt = 0;
-        for term in self.terms.iter() {
-            decimal += term.calculate_value(self.base) as InputInt;
-        }
-        decimal + self.remainder as InputInt
+        self.stream_all_components().sum::<InputInt>() + self.remainder as InputInt
     }
 }
 
 
-fn quantized_kernel_from(number: InputInt, base: BaseInt) -> Option<(InputInt, InputInt, Term)> {
+fn get_max_components_from(number: InputInt, base: BaseInt) -> Option<(InputInt, Vec<u8>)> {
     // The log will always be >= 1,
     // since the size is always greater than the base
     if number < base.into() {
@@ -105,11 +71,10 @@ fn quantized_kernel_from(number: InputInt, base: BaseInt) -> Option<(InputInt, I
     }
     let exponent = common_utilities::integer_log(number, base);
 
-    // Always: number >= kernel >= base > coefficient
-    let collapsed_kernel = (base as InputInt).pow(exponent as u32);
-    let coefficient: BaseInt = (number / collapsed_kernel) as BaseInt;
-    let full_component: InputInt = collapsed_kernel * coefficient as InputInt;
-    let temporary_remainder: InputInt = number - full_component;
-
-    Some((collapsed_kernel, temporary_remainder, Term{coefficient, exponent}))
+    // Always: number >= component >= base > coefficient
+    let component = (base as InputInt).pow(exponent as u32);
+    let coefficient: BaseInt = (number / component) as BaseInt;
+    let full_term: InputInt = component * coefficient as InputInt;
+    let temporary_remainder: InputInt = number - full_term;
+    Some((temporary_remainder, (0..coefficient).map(|_| exponent).collect()))
 }
