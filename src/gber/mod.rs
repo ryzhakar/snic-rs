@@ -49,7 +49,7 @@ impl Decomposition {
     pub fn stream_all_components(&self) -> impl Iterator<Item = InputInt> + '_ {
         self.component_powers
             .iter()
-            .map(|power| self.calculate_single_component(power.clone()))
+            .map(|power| self.calculate_single_component(*power))
     }
 
     /// Present the component as its regular integer variant

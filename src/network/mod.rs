@@ -105,7 +105,7 @@ impl Iterator for SubnetworkIterator {
             .take(group_size);
         let matchup: Vec<InputInt> = selected_sections
             .map(|(ix, section)| {
-                let old_head = section.0.clone();
+                let old_head = section.0;
                 self.increment_internal_section_pointer(ix);
                 old_head + self.offset
             })
@@ -134,8 +134,7 @@ impl StreamNetworkMatchups {
             .stream_all_components()
             .map(|sn_size| {
                 let iter =
-                    SubnetworkIterator::new(sn_size.clone(), network_gber.base, rolling_offset)
-                        .unwrap();
+                    SubnetworkIterator::new(sn_size, network_gber.base, rolling_offset).unwrap();
                 rolling_offset += sn_size;
                 iter
             })
@@ -174,13 +173,16 @@ impl Iterator for StreamNetworkMatchups {
 fn stream_intersubnetwork_matchups(decomposition: &gber::Decomposition) -> VecDeque<Vec<InputInt>> {
     let component_pairs: Vec<(InputInt, u8)> = zip(
         decomposition.stream_all_components(),
-        decomposition.component_powers.clone().into_iter(),
+        decomposition.component_powers.clone(),
     )
     .collect();
     let seat_allocations = matchup_allocations_for(&component_pairs, decomposition.base);
-    let mut component_iterator = (&component_pairs).iter();
+    let mut component_iterator = component_pairs.iter();
 
-    let mut total_hub_seats: BaseInt = (&seat_allocations).iter().map(|(hs, _)| hs.to_owned()).sum::<BaseInt>();
+    let mut total_hub_seats: BaseInt = seat_allocations
+        .iter()
+        .map(|(hs, _)| hs.to_owned())
+        .sum::<BaseInt>();
     if decomposition.remainder > 0 {
         total_hub_seats += decomposition.base - decomposition.remainder;
     }
@@ -197,7 +199,6 @@ fn stream_intersubnetwork_matchups(decomposition: &gber::Decomposition) -> VecDe
     index_offset += hub_network_size;
 
     let mut inter_matchups: VecDeque<Vec<InputInt>> = zip(component_iterator, seat_allocations)
-        .into_iter()
         .map(|((spoke_size, _), (hub_seats, spoke_seats))| {
             let reserved_spoke_seats_stream =
                 take_elements_uniformly(*spoke_size, spoke_seats, index_offset);
@@ -213,19 +214,15 @@ fn stream_intersubnetwork_matchups(decomposition: &gber::Decomposition) -> VecDe
         .collect();
 
     if decomposition.remainder == 0 {
-        return inter_matchups
+        return inter_matchups;
     }
     let remainder_hub_seats = get_vector_slice_from(
         &reserved_hub_seats,
         hub_seat_offset,
         decomposition.base - decomposition.remainder,
     );
-    let remainder_elements =
-        (index_offset..(index_offset + decomposition.remainder as InputInt)).into_iter();
-    let remainder_matchup = remainder_elements
-        .chain(remainder_hub_seats)
-        .into_iter()
-        .collect();
+    let remainder_elements = index_offset..(index_offset + decomposition.remainder as InputInt);
+    let remainder_matchup = remainder_elements.chain(remainder_hub_seats).collect();
     inter_matchups.push_back(remainder_matchup);
     inter_matchups
 }
@@ -268,7 +265,8 @@ pub fn take_elements_uniformly(
 ) -> impl Iterator<Item = InputInt> {
     let window_size: InputInt = network_size
         .checked_div(quantity as InputInt)
-        .ok_or("Division by zero").expect("Cannot take 0 elements");
+        .ok_or("Division by zero")
+        .expect("Cannot take 0 elements");
     (0..network_size)
         .filter(move |ix| ix % window_size == 0)
         .map(move |ix| ix + offset)
