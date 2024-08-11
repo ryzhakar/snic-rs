@@ -117,9 +117,9 @@ impl Iterator for SubnetworkIterator {
 }
 
 /// Iterator for generating the matchups of the whole network.
-/// Generates matchups for subnetworks.
-/// TODO: generate inter-subnetwork matchups.
-/// TODO: generate remainder matchups.
+/// Generates intra-subnetwork matchups first,
+/// then inter-subnetwork matchups,
+/// then remainder matchups.
 #[derive(Default, Debug)]
 pub struct StreamNetworkMatchups {
     pub network_gber: gber::Decomposition,
