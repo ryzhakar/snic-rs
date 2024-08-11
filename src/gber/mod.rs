@@ -3,12 +3,12 @@
 //! 1. **Number Representation**: GBER represents any non-negative integer N as a sum of powers of a chosen base b:
 //!    N = c₁b^p₁ + c₂b^p₂ + ... + cₖb^pₖ + r
 //!    Where 0 < cᵢ < b, p₁ > p₂ > ... > pₖ ≥ 0, and 0 ≤ r < b
-//! 
+//!
 //! 2. **Uniqueness**: For any given base b and number N, there is only one correct GBER representation.
-//! 
+//!
 //! 3. **Completeness**: GBER can represent any non-negative integer for any base b > 1.
 
-use crate::common_types::{InputInt, BaseInt};
+use crate::common_types::{BaseInt, InputInt};
 use crate::common_utilities;
 
 /// GBER of a number.
@@ -25,30 +25,28 @@ pub struct Decomposition {
 impl Decomposition {
     pub fn new(decimal_number: InputInt, base: BaseInt) -> Self {
         let mut remainder = decimal_number;
-        let mut component_collections: Vec<Vec<u8>> = vec!();
+        let mut component_collections: Vec<Vec<u8>> = vec![];
         loop {
-            let decomposition_step_result = get_max_components_from(
-                remainder, base
-            );
+            let decomposition_step_result = get_max_components_from(remainder, base);
             match decomposition_step_result {
                 None => break,
                 Some((transitive_remainder, components)) => {
                     remainder = transitive_remainder;
                     component_collections.push(components);
-                },
+                }
             };
-        };
-        Self{
+        }
+        Self {
             base,
             remainder: remainder as BaseInt,
             component_powers: component_collections.into_iter().flatten().collect(),
         }
     }
 
-    pub fn stream_all_components(&self) -> impl Iterator<Item=InputInt> + '_ {
-        self.component_powers.iter().map(
-            |power| self.calculate_single_component(power.clone())
-        )
+    pub fn stream_all_components(&self) -> impl Iterator<Item = InputInt> + '_ {
+        self.component_powers
+            .iter()
+            .map(|power| self.calculate_single_component(power.clone()))
     }
 
     /// Present the component as its regular integer variant
@@ -62,12 +60,11 @@ impl Decomposition {
     }
 }
 
-
 fn get_max_components_from(number: InputInt, base: BaseInt) -> Option<(InputInt, Vec<u8>)> {
     // The log will always be >= 1,
     // since the size is always greater than the base
     if number < base.into() {
-        return None
+        return None;
     }
     let exponent = common_utilities::integer_log(number, base);
 
@@ -76,5 +73,8 @@ fn get_max_components_from(number: InputInt, base: BaseInt) -> Option<(InputInt,
     let coefficient: BaseInt = (number / component) as BaseInt;
     let full_term: InputInt = component * coefficient as InputInt;
     let temporary_remainder: InputInt = number - full_term;
-    Some((temporary_remainder, (0..coefficient).map(|_| exponent).collect()))
+    Some((
+        temporary_remainder,
+        (0..coefficient).map(|_| exponent).collect(),
+    ))
 }
