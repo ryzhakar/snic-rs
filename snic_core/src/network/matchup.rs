@@ -252,6 +252,45 @@ fn take_elements_uniformly(
 }
 
 #[cfg(test)]
+mod test_match_count {
+    use crate::gber::Decomposition;
+    use super::calculate_matchups_number_for;
+    use super::LocalMatchupsManager;
+    use crate::common_types::{BaseInt, InputInt};
+    use std::collections::HashSet;
+    const NETWORK_SIZE: InputInt = BaseInt::MAX as InputInt;
+    const MATCH_SIZE: BaseInt = 2;
+
+    #[test]
+    fn matches_are_unique() {
+        let decomposition =
+            Decomposition::new(NETWORK_SIZE, MATCH_SIZE).expect("Invalid decomposition values");
+        let network = LocalMatchupsManager::new(decomposition);
+        let matchups = network.subnetwork_iterators
+            .into_iter().flatten().collect::<Vec<Vec<InputInt>>>();
+        let matchups_length = matchups.len();
+        let unique_matchups = matchups.into_iter().collect::<HashSet<Vec<InputInt>>>();
+        assert_eq!(matchups_length, unique_matchups.len());
+    }
+
+
+    #[test]
+    fn special_2_base() {
+        let decomposition =
+            Decomposition::new(NETWORK_SIZE, MATCH_SIZE).expect("Invalid decomposition values");
+        let math_calculation = decomposition.stream_all_components()
+            .map(|comp_size| calculate_matchups_number_for(comp_size, MATCH_SIZE))
+            .sum::<u64>();
+        let network = LocalMatchupsManager::new(decomposition);
+        let counted_subnetwork_matchups = network.subnetwork_iterators
+            .into_iter().flatten().map(|_| 1u64).sum::<u64>();
+        assert_eq!(math_calculation, counted_subnetwork_matchups);
+    }
+
+}
+
+
+#[cfg(test)]
 mod test_get_vector_slice_from {
     use super::get_vector_slice_from;
     const ZEROS: [i32; 5] = [0, 0, 0, 0, 0];
