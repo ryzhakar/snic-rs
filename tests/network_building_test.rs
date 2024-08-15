@@ -1,4 +1,4 @@
-use snic::network::take_elements_uniformly;
+use snic::network::matchup::take_elements_uniformly;
 
 #[test]
 fn test_take_elements_uniformly() {
