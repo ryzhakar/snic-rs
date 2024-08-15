@@ -1,5 +1,6 @@
 .test*.py
 .DS_Store
 .venv
+/doc
 /book
 /target

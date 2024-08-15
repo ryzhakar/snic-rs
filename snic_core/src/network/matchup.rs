@@ -236,7 +236,7 @@ fn matchup_allocations_for(
         .collect()
 }
 
-pub fn take_elements_uniformly(
+fn take_elements_uniformly(
     network_size: InputInt,
     quantity: BaseInt,
     offset: InputInt,
@@ -249,4 +249,123 @@ pub fn take_elements_uniformly(
         .filter(move |ix| ix % window_size == 0)
         .map(move |ix| ix + offset)
         .take(quantity.into())
+}
+
+#[cfg(test)]
+mod test_get_vector_slice_from {
+    use super::get_vector_slice_from;
+    const ZEROS: [i32; 5] = [0, 0, 0, 0, 0];
+
+    #[test]
+    fn full_slice() {
+        assert_eq!(
+            &ZEROS[..],
+            &get_vector_slice_from(&ZEROS, 0, ZEROS.len() as u16)[..],
+        )
+    }
+
+    #[test]
+    fn slice_length() {
+        assert_eq!(
+            3,
+            get_vector_slice_from(&ZEROS, 0, 3).len(),
+        )
+    }
+}
+
+#[cfg(test)]
+mod test_matchup_allocations_for {
+    use super::{matchup_allocations_for, BaseInt, InputInt};
+    const SHORT_SLICE: &[(InputInt, u8)] = &[(100, 2), (10, 1)];
+    const MID_SLICE: &[(InputInt, u8)] = &[(1000, 3), (100, 2), (10, 1)];
+    const LONGER_SLICE: &[(InputInt, u8)] = &[
+        (1000, 3),
+        //
+        (1000, 3),
+        (1000, 3),
+        (1000, 3),
+        (1000, 3),
+        (100, 2),
+        (100, 2),
+        (100, 2),
+        (100, 2),
+        (10, 1),
+        (10, 1),
+        (10, 1),
+        (10, 1),
+    ];
+
+
+    #[test]
+    fn base2() {
+        let base = 2 as InputInt;
+        let slice = &[(base.pow(10), 10u8), (base.pow(10), 10u8), (base, 1u8)];
+        for allocation in matchup_allocations_for(slice, base as BaseInt) {
+            assert_eq!(allocation, (1 as BaseInt, 1 as BaseInt))
+        }
+    }
+
+
+    #[test]
+    fn seat_allocation_equivalence() {
+        let base = 10;
+        for slice in vec![SHORT_SLICE, MID_SLICE, LONGER_SLICE] {
+            let allocations = matchup_allocations_for(slice, base);
+            assert_eq!(
+                allocations.into_iter().map(|(a, b)| a + b).sum::<BaseInt>(),
+                (slice.len() as BaseInt - 1) * base,
+            )
+        }
+    }
+
+    #[test]
+    fn simple_10_base_components() {
+        assert_eq!(matchup_allocations_for(SHORT_SLICE, 10), vec![(6, 4)]);
+        assert_eq!(matchup_allocations_for(MID_SLICE, 10), vec![(6, 4), (7, 3)]);
+        assert_eq!(
+            matchup_allocations_for(LONGER_SLICE, 10),
+            vec![
+                (5, 5),
+                (5, 5),
+                (5, 5),
+                (5, 5),
+                (6, 4),
+                (6, 4),
+                (6, 4),
+                (6, 4),
+                (7, 3),
+                (7, 3),
+                (7, 3),
+                (7, 3),
+            ]
+        );
+    }
+}
+
+
+#[cfg(test)]
+mod test_take_elements_uniformly {
+    use super::take_elements_uniformly;
+
+    #[test]
+    fn take_2_of_20() {
+        assert_eq!(
+            take_elements_uniformly(20, 2, 10).collect::<Vec<u32>>(),
+            vec![10, 20],
+        );
+    }
+    #[test]
+    fn take_2_of_3() {
+        assert_eq!(
+            take_elements_uniformly(3, 2, 100).collect::<Vec<u32>>(),
+            vec![100, 101],
+        );
+    }
+    #[test]
+    fn take_5_of_1000() {
+        assert_eq!(
+            take_elements_uniformly(1001, 5, 1).collect::<Vec<u32>>(),
+            vec![1, 201, 401, 601, 801],
+        );
+    }
 }
