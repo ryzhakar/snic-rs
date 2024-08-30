@@ -11,12 +11,11 @@ fn simple_rank_preserves_sorting() {
     let gber = Decomposition::new(length, base).unwrap();
     let network_matchups = matchup::LocalMatchupsManager::new(gber);
     let matchups = network_matchups.subnetwork_iterators
-        .into_iter().flatten().chain(network_matchups.intersubnetwork_matchups.into_iter())
+        .into_iter().flatten().chain(network_matchups.intersubnetwork_matchups)
         .collect::<Vec<Vec<InputInt>>>();
     let mould = comparison::generate_expansion_mould_for(base);
     let pairwise_comparisons = matchups.into_iter()
-        .map(|ranking| comparison::convert_to_comparisons(&ranking[..], &mould[..]))
-        .flatten().collect::<Vec<(InputInt, InputInt)>>();
+        .flat_map(|ranking| comparison::convert_to_comparisons(&ranking[..], &mould[..])).collect::<Vec<(InputInt, InputInt)>>();
     let rating = rank::get_ranking_from(pairwise_comparisons);
     let mut sorted_rating = rating.clone();
     sorted_rating.sort_by(|a, b| a.partial_cmp(b).unwrap());

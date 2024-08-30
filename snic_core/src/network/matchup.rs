@@ -348,7 +348,7 @@ mod test_matchup_allocations_for {
     #[test]
     fn seat_allocation_equivalence() {
         let base = 10;
-        for slice in vec![SHORT_SLICE, MID_SLICE, LONGER_SLICE] {
+        for slice in [SHORT_SLICE, MID_SLICE, LONGER_SLICE] {
             let allocations = matchup_allocations_for(slice, base);
             assert_eq!(
                 allocations.into_iter().map(|(a, b)| a + b).sum::<BaseInt>(),

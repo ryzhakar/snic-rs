@@ -19,8 +19,8 @@ pub fn convert_to_comparisons<T: Clone>(
 ) -> Vec<(T, T)> {
     mould.iter().map(|(lix, rix)| {
         (
-            matchup_result[lix.clone() as usize].clone(),
-            matchup_result[rix.clone() as usize].clone()
+            matchup_result[*lix as usize].clone(),
+            matchup_result[*rix as usize].clone()
         )
     }).collect()
 }
@@ -35,7 +35,7 @@ mod test_matchup_result_conversion {
     #[test]
     fn test_elements_retrieval() {
         let indices = (0, MATCHUP_SIZE - 1);
-        let values = indices.clone();
+        let values = indices;
         let mould: &[(BaseInt, BaseInt)] = &[indices];
         let matchup_results = &(0..MATCHUP_SIZE).collect::<Vec<BaseInt>>()[..];
         assert_eq!(convert_to_comparisons(matchup_results, mould), vec![values]);
@@ -51,8 +51,8 @@ mod test_mould_generation {
 
     #[test]
     fn correct_number_of_pairs() {
-        let expected_pairs_number: InputInt;
-        expected_pairs_number = (MATCHUP_SIZE as InputInt * (MATCHUP_SIZE as InputInt - 1)) / 2;
+        
+        let expected_pairs_number: InputInt = (MATCHUP_SIZE as InputInt * (MATCHUP_SIZE as InputInt - 1)) / 2;
         assert_eq!(
             expected_pairs_number as usize,
             generate_expansion_mould_for(MATCHUP_SIZE).len()
